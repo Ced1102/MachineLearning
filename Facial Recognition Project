@@ -1,0 +1,57 @@
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from tensorflow import keras, metrics
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Model
+from sklearn.metrics import confusion_matrix
+import itertools
+import matplotlib.pyplot as plt
+from webencodings import labels
+
+train_path=r'C:\Users\John Cedric Angeles\Desktop\test\train'
+valid_path=r'C:\Users\John Cedric Angeles\Desktop\test\val'
+test_path=r'C:\Users\John Cedric Angeles\Desktop\test'
+
+class_labels=['aguilar', 'alcala', 'ang', 'angeles', 'aquino', 'aregon', 'avenido', 'baldrias', 'bansil', 'barrios', 'cabanding', 'caibigan', 'cirera', 'delos santos', 'elvambuena', 'gamad', 'jabiguero', 'lumido', 'manlutac','mercado', 'montes', 'naval', 'nunez', 'pena', 'pinili', 'rivera', 'tamayo', 'thio ac', 'virtucio']
+
+train_batches=ImageDataGenerator(preprocessing_function=keras.applications.xception.preprocess_input)\
+    .flow_from_directory(train_path, target_size=(299,299),classes=class_labels,batch_size=5)
+valid_batches=ImageDataGenerator(preprocessing_function=keras.applications.xception.preprocess_input)\
+    .flow_from_directory(valid_path, target_size=(299,299),classes=class_labels,batch_size=5)
+test_batches=ImageDataGenerator(preprocessing_function=keras.applications.xception.preprocess_input)\
+    .flow_from_directory(test_path, target_size=(299,299),classes=class_labels,batch_size=5, shuffle=False)
+
+base_model=keras.applications.xception.Xception(include_top=False)
+
+x=base_model.output
+x=GlobalAveragePooling2D()(x)
+x=Dense(1024, activation='relu')(x)
+x=Dense(29, activation='sigmoid')(x)
+model=Model(inputs=base_model.input, outputs=x)
+
+
+base_model.trainable = False
+
+N=20
+
+model.compile(Adam(lr=.0001),loss='categorical_crossentropy', metrics=['accuracy'])
+history=model.fit_generator(train_batches, steps_per_epoch=40, validation_data=valid_batches,
+                            validation_steps=90,epochs=N,verbose=1)
+
+print("[INFO]evaluating model...")
+
+test_labels=test_batches.classes
+predictions=model.predict_generator(test_batches, steps=28, verbose=1)
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+plt.imshow(np.random.random((29,29)), interpolation='nearest')
+plt.xticks(np.arange(0,29), ['aguilar', 'alcala', 'ang', 'angeles', 'aquino', 'aregon', 'avenido', 'baldrias', 'bansil', 'barrios', 'cabanding', 'caibigan', 'cirera', 'delos santos', 'elvambuena', 'gamad', 'jabiguero', 'lumido', 'manlutac','mercado', 'montes', 'naval', 'nunez', 'pena', 'pinili', 'rivera', 'tamayo', 'thio ac', 'virtucio'])
+plt.yticks(np.arange(0,29), ['aguilar', 'alcala', 'ang', 'angeles', 'aquino', 'aregon', 'avenido', 'baldrias', 'bansil', 'barrios', 'cabanding', 'caibigan', 'cirera', 'delos santos', 'elvambuena', 'gamad', 'jabiguero', 'lumido', 'manlutac','mercado', 'montes', 'naval', 'nunez', 'pena', 'pinili', 'rivera', 'tamayo', 'thio ac', 'virtucio'])
+
+plt.show()
